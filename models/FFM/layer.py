@@ -20,19 +20,19 @@ class FieldAwareFM(nn.Module):
 
     def forward(self, input):
         linear_comb = self.w(input)
-
-        vs = [torch.mm(input, v_f) for v_f in self.v_fields]
+        second_order = 0
         for i in range(self.fields_num):
             for j in range(i+1, self.fields_num):
-                product = vs[j][:,i], vs[i][:,j]
-        return product
+                inner_product = torch.dot(self.v_fields[j][i,:], self.v_fields[i][j,:])
+                second_order += torch.sum(inner_product * input[:,i] * input[:,j])
+        return torch.sigmod(linear_comb + second_order)
 
-def get_data():
-    X_train, Y_train, X_test, Y_test, X_val, Y_val = DataLoading(args.train_ratio, args.test_ratio)
+def get_data(train_ratio, test_ratio):
+    X_train, Y_train, X_test, Y_test, X_val, Y_val = DataLoading(train_ratio, test_ratio)
     return X_train, Y_train, X_test, Y_test, X_val, Y_val
 
 def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ratio, test_ratio):
-    X_train, Y_train, X_test, Y_test, X_val, Y_val = get_data()
+    X_train, Y_train, X_test, Y_test, X_val, Y_val = get_data(train_ratio, test_ratio)
     train_inputs, train_targets = torch.FloatTensor(X_train), torch.FloatTensor(Y_train)
     test_inputs, test_targets = torch.FloatTensor(X_test), torch.FloatTensor(Y_test)
     val_inputs, val_targets = torch.FloatTensor(X_val), torch.FloatTensor(Y_val)

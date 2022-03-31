@@ -9,21 +9,23 @@ import matplotlib.pyplot as plt
 
 class FieldAwareFM(nn.Module):
 
-    def __init__(self, field_dim, embed_dim, fields_num):
+    def __init__(self, feats_dim, embed_dim, fields_num):
+        #fields_dict take a dict as input, every item of field_dict is {feature_idx, field_idx}
         super(FieldAwareFM, self).__init__()
         self.fields_num = fields_num
-        self.w = nn.Linear(field_dim, 1, bias=True)
-        self.v_fields = nn.ParameterList([torch.nn.Parameter(
-            torch.FloatTensor(field_dim, embed_dim), requires_grad=True) for _ in range(fields_num)])
-        for v_f in self.v_fields:
-            nn.init.xavier_normal_(v_f)
+        self.fields_dim = feats_dim
+        self.embed_dim = embed_dim
+        self.w = nn.Linear(feats_dim, 1, bias=True)
+        # field_num indicates the number of fields while fields_dim indicates features length including dense features and sparse features
+        self.vs = nn.Parameter(torch.FloatTensor(fields_num, feats_dim, embed_dim))
+        nn.init.xavier_normal_(self.vs)
 
-    def forward(self, input):
+    def forward(self, input, fields_dict):
         linear_comb = self.w(input)
         second_order = 0
-        for i in range(self.fields_num):
-            for j in range(i+1, self.fields_num):
-                inner_product = torch.dot(self.v_fields[j][i,:], self.v_fields[i][j,:])
+        for i in range(self.feats_dim):
+            for j in range(i+1, self.feats_dim):
+                inner_product = torch.dot(self.vs[fields_dict[j], i, :], self.vs[fields_dict[i], j, :])
                 second_order += torch.sum(inner_product * input[:,i] * input[:,j])
         return torch.sigmod(linear_comb + second_order)
 

@@ -16,7 +16,6 @@ class DeepCrossNetwork(nn.Module):
         self.dln = dlayers_num
         self.input_dim = input_dim
         self.w = nn.ModuleList([torch.nn.Linear(self.input_dim, 1) for _ in range(self.cln)])
-
         layers = ()
         for embed_dim in dlayers_dims:
             layers.append(torch.nn.Linear(input_dim, embed_dim))

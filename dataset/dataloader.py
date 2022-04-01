@@ -37,6 +37,25 @@ def DataPreProcessing(df):
     X_scaled = preprocessing.scale(X)
     return X_scaled, Y
 
+def GetF2FDict(df):
+    # only features, no labels
+    field_id = 0
+    feat_id = 0
+    dic = dict()
+    for i in range(len(df.columns)):
+        if df.iloc[:,i].dtype != 'object':
+            dic[feat_id] = field_id
+            feat_id += 1
+            field_id += 1
+        else:
+            unique_value = df.iloc[:,i].value_counts().count()
+            for i in range(unique_value):
+                dic[feat_id + i] = field_id
+            field_id += 1
+            feat_id += unique_value
+    return dic
+
+
 def DataSpliting(X, Y, train_ratio, test_ratio):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_ratio)
     X_test, X_val, Y_test, Y_val = train_test_split(X_test, Y_test, test_size=train_ratio)
@@ -45,13 +64,18 @@ def DataSpliting(X, Y, train_ratio, test_ratio):
     Y_val = np.array(Y_val).reshape(-1, 1)
     return X_train, Y_train, X_test, Y_test, X_val, Y_val
 
-def DataLoading(train_ratio, test_ratio):
+def DataLoading(train_ratio, test_ratio, get_dict=False):
     f, s1, s2 = DataReading()
     df = DataCleaning(f)
+    if get_dict:
+        dic = GetF2FDict(df.iloc[:, 1:])
     df = DataConverting(df)
     X, Y = DataPreProcessing(df)
     X_train, Y_train, X_test, Y_test, X_val, Y_val = DataSpliting(X, Y, train_ratio, test_ratio)
-    return X_train, Y_train, X_test, Y_test, X_val, Y_val
+    if get_dict:
+        return X_train, Y_train, X_test, Y_test, X_val, Y_val, dic
+    else:
+        return X_train, Y_train, X_test, Y_test, X_val, Y_val
 
 if __name__ == '__main__':
     pass

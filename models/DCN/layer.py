@@ -10,14 +10,14 @@ import tqdm
 
 class DeepCrossNetwork(nn.Module):
 
-    def __init__(self, clayers_num, dlayers_num, input_dim, output_dim, dropout, dlayers_dims, output_layer = True):
+    def __init__(self, clayers_num, dlayers_num, input_dim, output_dim, dropout, output_layer = True):
         super(DeepCrossNetwork, self).__init__()
         self.cln = clayers_num
         self.dln = dlayers_num
         self.input_dim = input_dim
         self.w = nn.ModuleList([torch.nn.Linear(self.input_dim, 1) for _ in range(self.cln)])
-        layers = ()
-        for embed_dim in dlayers_dims:
+        layers = []
+        for embed_dim in range(self.dln):
             layers.append(torch.nn.Linear(input_dim, embed_dim))
             layers.append(torch.nn.BatchNorm1d(embed_dim))
             layers.append(torch.nn.ReLU())
@@ -52,8 +52,8 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
 
     train_dataset = TensorDataset(train_inputs, train_targets)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
-    model = DeepCrossNetwork(train_inputs.shape[1], embed_dim)
+    # __init__(self, clayers_num, dlayers_num, input_dim, output_dim, dropout, dlayers_dims, output_layer = True):
+    model = DeepCrossNetwork(3, 3, train_inputs.shape[1], embed_dim, 0.5)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.BCELoss()
     loss_list = list()

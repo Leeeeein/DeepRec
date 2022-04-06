@@ -49,10 +49,11 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
     train_dataset = TensorDataset(train_inputs, train_targets)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     # __init__(self, clayers_num, dlayers_num, input_dim, output_dim, dropout, dlayers_dims, output_layer = True):
-    model = DeepCrossNetwork(3, 3, train_inputs.shape[1], [128,64,32], 0.5)
+    model = DeepCrossNetwork(3, 3, train_inputs.shape[1], [128,64,32], 0.3)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.BCELoss()
     loss_list = list()
+    auc_list = []
     for epoch in range(epochs):
          total_loss = 0
          for it, (x, y) in enumerate(train_loader):
@@ -66,21 +67,23 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
              #if it % 30 == 0:
              print(f'    epochs:[{epoch}], iter:[{it}], average loss:[{total_loss}]')
              total_loss = 0
-         predict = model(val_inputs)
-         target = val_targets
-         auc = roc_auc_score(target.detach().numpy(), predict.detach().numpy())
-    plt.plot(range(len(loss_list)), loss_list)
+             predict = model(test_inputs)
+             target = test_targets
+             auc = roc_auc_score(target.detach().numpy(), predict.detach().numpy())
+             auc_list.append(auc)
+         print(f'** auc.[{auc}]', auc)
+    plt.plot(range(len(auc_list)), auc_list)
     plt.show()
 
 if __name__ == '__main__':
     #print(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
     parser.add_argument('--embed_dim', default=128)
-    parser.add_argument('--learning_rate', type=float, default=1e-4)
-    parser.add_argument('--weight_decay', type=float, default=1e-6)
-    parser.add_argument('--epochs', type=int, default=20)
-    parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--train_ratio', type=float, default=0.6)
+    parser.add_argument('--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--weight_decay', type=float, default=1e-1)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--train_ratio', type=float, default=0.4)
     parser.add_argument('--test_ratio', type=float, default=0.5)
     args = parser.parse_args()
     trainer(args.embed_dim,

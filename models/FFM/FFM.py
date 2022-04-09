@@ -10,7 +10,10 @@ import tqdm
 
 class FieldAwareFM(nn.Module):
 
-    def __init__(self, feats_dim, embed_dim, fields_num, fields_dict):
+    def __init__(self, feats_dim,
+                 embed_dim,
+                 fields_num,
+                 fields_dict):
         #fields_dict take a dict as input, every item of field_dict is {feature_idx, field_idx}
         super(FieldAwareFM, self).__init__()
         self.fields_dict = fields_dict
@@ -57,12 +60,12 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
 if __name__ == '__main__':
     #print(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
-    parser.add_argument('--embed_dim', default=128)
+    parser.add_argument('--embed_dim', default=1024)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=1e-6)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--train_ratio', type=float, default=0.6)
+    parser.add_argument('--train_ratio', type=float, default=0.8)
     parser.add_argument('--test_ratio', type=float, default=0.5)
     args = parser.parse_args()
     trainer(args.embed_dim,

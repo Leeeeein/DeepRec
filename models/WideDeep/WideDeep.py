@@ -19,7 +19,7 @@ class WideDeep(nn.Module):
         self.layers_dim = layers_dim
 
         self.act = nn.Sigmoid()
-        self.linear = nn.Linear(input_dim, embed_dim)
+        self.linear = nn.Linear(input_dim, 1)
 
         layers = []
         for embed_dim in layers_dim:
@@ -34,7 +34,6 @@ class WideDeep(nn.Module):
         self.output = nn.Linear(layers_dim[-1], 1)
 
     def forward(self, input):
-
         output_linear = self.linear(input)
         output_mlp = self.mlp(input)
         deep = self.output(output_mlp)
@@ -67,7 +66,8 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
          total_loss = 0
          for it, (x, y) in enumerate(train_loader):
              pred = model(x)
-             print(pred.shape)
+             # print(pred.shape)
+             # print(y.shape)
              loss = criterion(pred, y)
              model.zero_grad()
              loss.backward()
@@ -89,10 +89,10 @@ if __name__ == '__main__':
     #print(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
     parser.add_argument('--embed_dim', default=1024)
-    parser.add_argument('--learning_rate', type=float, default=1e-3)
-    parser.add_argument('--weight_decay', type=float, default=1e-1)
-    parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--learning_rate', type=float, default=1e-2)
+    parser.add_argument('--weight_decay', type=float, default=1e-5)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument('--train_ratio', type=float, default=0.8)
     parser.add_argument('--test_ratio', type=float, default=0.5)
     args = parser.parse_args()

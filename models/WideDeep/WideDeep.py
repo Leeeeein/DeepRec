@@ -93,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=1e-5)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=256)
-    parser.add_argument('--train_ratio', type=float, default=0.8)
+    parser.add_argument('--train_ratio', type=float, default=0.6)
     parser.add_argument('--test_ratio', type=float, default=0.5)
     args = parser.parse_args()
     trainer(args.embed_dim,

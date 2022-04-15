@@ -10,28 +10,48 @@ import matplotlib.pyplot as plt
 class NFM(nn.Module):
 
     def __init__(self, field_dim,
-                 embed_dim):
+                 embed_dim,
+                 layers_dim,
+                 dropout = 0.5):
         super(NFM, self).__init__()
         self.w = nn.Linear(field_dim, 1, bias=True)
         self.v = nn.Parameter(torch.FloatTensor(field_dim, embed_dim), requires_grad=True)
         nn.init.xavier_normal_(self.v)
-
-    def forward(self, input):
+        self.batch_norm = torch.nn.BatchNorm1d(embed_dim)
+        self.dropout = torch.nn.Dropout(dropout)
+        self.input_dim = embed_dim
+        layers = []
+        for dim in layers_dim:
+            layers.append(torch.nn.Linear(self.input_dim, dim))
+            layers.append(torch.nn.BatchNorm1d(dim))
+            layers.append(torch.nn.ReLU())
+            layers.append(torch.nn.Dropout(p=dropout))
+            self.input_dim = dim
+        layers.append(torch.nn.Linear(embed_dim, 1))
+        self.mlp = nn.Sequential(*layers)
+    def _fm_forward(self, input):
         """
         input shape: (num_item, field_dim)
         """
-        linear_comb = self.w(input)
         square_of_sum = torch.mm(input, self.v)
         square_of_sum = torch.pow(square_of_sum, 2)
-        first_term = torch.sum(square_of_sum, dim=1)
 
         square_of_v = torch.pow(self.v, 2)
         square_of_x = torch.pow(input, 2)
         sum_of_square = torch.mm(square_of_x, square_of_v)
-        second_term = torch.sum(sum_of_square, dim=1)
-        p = torch.sigmoid(linear_comb.squeeze(1) + first_term - second_term)
-        return p.view(-1, 1)
 
+        fm_output = square_of_sum - sum_of_square
+        return fm_output
+
+    def forward(self, input):
+        output = self._fm_forward(input)
+        output = self.batch_norm(output)
+        output = self.dropout(output)
+        output = self.mlp(output)
+
+        linear = self.w(input)
+        p = torch.sigmoid(linear + output)
+        return p.view(-1, 1)
 
 def get_data():
     X_train, Y_train, X_test, Y_test, X_val, Y_val = DataLoading(args.train_ratio, args.test_ratio)
@@ -46,7 +66,7 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
     train_dataset = TensorDataset(train_inputs, train_targets)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 
-    model = NFM(train_inputs.shape[1], embed_dim)
+    model = NFM(train_inputs.shape[1], embed_dim, [256, 128, 64])
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.BCELoss()
     loss_list = list()
@@ -73,8 +93,8 @@ def trainer(embed_dim, learning_rate, weight_decay, epochs, batch_size, train_ra
 if __name__ == '__main__':
     #print(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
-    parser.add_argument('--embed_dim', default=1024)
-    parser.add_argument('--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--embed_dim', default=64)
+    parser.add_argument('--learning_rate', type=float, default=1e-2)
     parser.add_argument('--weight_decay', type=float, default=1e-6)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=128)

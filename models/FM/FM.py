@@ -29,7 +29,8 @@ class FM(nn.Module):
         square_of_x = torch.pow(input, 2)
         sum_of_square = torch.mm(square_of_x, square_of_v)
         second_term = torch.sum(sum_of_square, dim=1)
-        p = torch.sigmoid(linear_comb.squeeze(1) + first_term - second_term)
+        output = first_term - second_term
+        p = torch.sigmoid(linear_comb.squeeze(1) + output)
         return p.view(-1, 1)
 
 

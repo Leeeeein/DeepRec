@@ -15,7 +15,7 @@ class AttentionalFM(nn.Module):
                  training,
                  dropout,
                  fields_dict):
-        super(self, AttentionalFM).__init__()
+        super(AttentionalFM, self).__init__()
         self.w = nn.Linear(fields_dim, attn_dim, bias=True)
         self.h = nn.Linear(attn_dim, 1)
 
@@ -23,32 +23,31 @@ class AttentionalFM(nn.Module):
         self.fields_dim = fields_dim
         self.feats_dim = feats_dim
         self.vs = nn.Parameter(torch.FloatTensor(fields_dim, feats_dim, attn_dim))
+        self.w = nn.Linear(attn_dim, attn_dim, bias=True)
         nn.init.xavier_normal_(self.vs)
 
         self.p = nn.Linear(attn_dim, 1)
         self.dropout = dropout
         self.training = training
-        nn.init.xavier_normal_(self.v)
+
 
     def __forward_fields(self, input):
         pass
 
     def __forward_dense(self, input):
-        """
-        input: shape is (batch_size, fields_size, field_dim)
-        """
-        _row = [], _col = []
-        row = [], col = []
+        _row, _col = [], []
+        row, col = [], []
         fields_num = input.shape[1]
-        for i in range(fields_num - 1):
-            for j in range(i + 1, fields_num):
+        for i in range(fields_num):
+            for j in range(fields_num):
                 _row.append(i)
                 _col.append(j)
         for i in range(len(_row)):
-            row.append(self.fields_dict[_row])
-            col.append(self.fields_dict[_col])
+            row.append(self.fields_dict[_row[i]])
+            col.append(self.fields_dict[_col[i]])
         p, q = self.vs[row, :], self.vs[col, :]
         inner_product = p * q
+        print(inner_product.shape)
         _a = self.h(F.relu(self.w(inner_product)))
         a = F.softmax(_a, dim=1)
         a = F.dropout(a, self.dropout, training=self.training)
@@ -78,7 +77,7 @@ def trainer(attn_dim, learning_rate, weight_decay, epochs, batch_size, train_rat
 #                 dropout,
 #                 fields_dict
 
-    model = AttentionalFM(train_inputs.shape[1], attn_dim,  True, 0.5, dic)
+    model = AttentionalFM(39, train_inputs.shape[1], attn_dim,  True, 0.5, dic)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.BCELoss()
     loss_list = list()
@@ -86,12 +85,11 @@ def trainer(attn_dim, learning_rate, weight_decay, epochs, batch_size, train_rat
         total_loss = 0
         for it, (x, y) in enumerate(train_loader):
             u = model(x)
-            print(u)
 
 if __name__ == '__main__':
     #print(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
-    parser.add_argument('--attn_dim', default=128)
+    parser.add_argument('--attn_dim', default=10)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=1e-6)
     parser.add_argument('--epochs', type=int, default=100)
@@ -106,6 +104,3 @@ if __name__ == '__main__':
             args.batch_size,
             args.train_ratio,
             args.test_ratio)
-
-
-

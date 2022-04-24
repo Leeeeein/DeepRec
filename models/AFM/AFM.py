@@ -9,6 +9,36 @@ import torch.nn.functional as F
 import tqdm
 
 class AttentionalFM(nn.Module):
+    def __init__(self,
+                 fields_dim,
+                 embed_dim,
+                 attn_dim):
+        super(AttentionalFM, self).__init__()
+        self.v = nn.Parameter(torch.FloatTensor(fields_dim, embed_dim))
+        self.w = nn.Linear(embed_dim, attn_dim, bias=True)
+        self.h = nn.Linear(attn_dim, 1)
+        self.p = nn.Linear(embed_dim, 1)
+
+    def forward(self, input):
+        #input size: (batch_size, field_dim, field_value)
+        vx = self.v * input
+        #vx size: (batch_size, field_dim, emebd_dim)
+        fields_num = input.shape[1]
+        row, col = [], []
+        for r in range(fields_num-1):
+            for c in range(r+1, fields_num):
+                row.append(r)
+                col.append(c)
+        vp, vq = vx[:, row], vx[:, col]
+        element_wise = vp * vq # (batch, sum(ij), embed_dim)
+        _a = self.w(element_wise) # (batch, sum(ij), attn_dim)
+        _a = F.relu(_a) # (batch, sum(ij), attn_dim)
+        _a = self.h(_a) # (batch, sum(ij), 1)
+        a = F.softmax(_a, dim=1) # (batch, sum(ij), 1)
+        a = a * element_wise
+        a = self.p(a)
+
+class AttentionalFM(nn.Module):
     def __init__(self, fields_dim,
                  feats_dim,
                  attn_dim,
